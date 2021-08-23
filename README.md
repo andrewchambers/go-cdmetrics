@@ -6,7 +6,7 @@ protocol.
 
 # Example
 
-Example:
+./example/main.go:
 ```
 package main
 
