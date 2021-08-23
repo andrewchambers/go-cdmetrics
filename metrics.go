@@ -12,11 +12,11 @@ import (
 )
 
 var (
-	LogFn                 = log.Printf
-	MetricPublishInterval = 10 * time.Second
-	MetricHost            string
-	MetricPlugin          string = "go"
-	MetricPluginInstance  string
+	LogFn                = log.Printf
+	MetricInterval       = 10 * time.Second
+	MetricHost           string
+	MetricPlugin         string = "go"
+	MetricPluginInstance string
 
 	MetricAddress  string = "localhost:25826"
 	MetricUsername string = "metrics"
@@ -82,7 +82,7 @@ func metricsForever() {
 		client, err := cdclient.DialUDP(MetricAddress, opts)
 		if err != nil {
 			LogFn("unable to create metrics client: %s", err)
-			time.Sleep(MetricPublishInterval)
+			time.Sleep(MetricInterval)
 			continue
 		}
 
@@ -101,7 +101,7 @@ func metricsForever() {
 				LogFn("metrics client flush failed: %s", err)
 				break
 			}
-			time.Sleep(MetricPublishInterval)
+			time.Sleep(MetricInterval)
 		}
 	}
 
@@ -112,7 +112,7 @@ func NewDefaultMetric() *cdclient.Metric {
 		Host:           MetricHost,
 		Plugin:         MetricPlugin,
 		PluginInstance: MetricPluginInstance,
-		Interval:       MetricPublishInterval,
+		Interval:       MetricInterval,
 	}
 }
 
