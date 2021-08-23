@@ -15,7 +15,7 @@ import (
   "time"
 
   "github.com/andrewchambers/go-cdmetrics"
-  _ "github.com/andrewchambers/go-cdmetrics/cdflag"
+  _ "github.com/andrewchambers/go-cdmetrics/flag"
 )
 
 var counter = cdmetrics.NewCounter("my-counter")
