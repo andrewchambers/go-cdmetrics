@@ -1,5 +1,7 @@
 # go-cdmetrics
 
+[![godocs.io](http://godocs.io/github.com/andrewchambers/go-cdmetrics?status.svg)](http://godocs.io/github.com/andrewchambers/go-cdmetrics)
+
 A high level collectd metrics library for go. The metrics
 are automatically exported to localhost via the collectd network
 protocol.
