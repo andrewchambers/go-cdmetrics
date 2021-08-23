@@ -48,11 +48,11 @@ Usage of ./example:
   -metrics-authfile string
         Path to metrics auth file. (default "/etc/collectd.authfile")
   -metrics-mode string
-        Metrics mode, one of "disable", "plain-text", "sign", "encrypt". (default "plain-text")
+        Metrics mode, one of "disabled", "signed", "encrypted". (default "disabled")
   -metrics-username string
         Username for metrics auth modes. (default "metrics")
 
-$ ./example
+$ ./example -metrics-mode=encrypted
 ```
 
 In another terminal:

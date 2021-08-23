@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	LogFn                 = log.Printf
 	MetricPublishInterval = 10 * time.Second
 	MetricHost            string
 	MetricPlugin          string = "go"
@@ -19,7 +20,7 @@ var (
 
 	MetricAddress  string = "localhost:25826"
 	MetricUsername string = "metrics"
-	MetricMode     string = "plain-text"
+	MetricMode     string = "disabled"
 	MetricAuthFile string = "/etc/collectd.authfile"
 )
 
@@ -48,30 +49,30 @@ func metricsForever() {
 	}
 
 	switch MetricMode {
-	case "disable":
+	case "disabled":
 		return
-	case "plain-text":
+	case "unencrypted":
 		opts.Mode = cdclient.UDPPlainText
-	case "sign":
+	case "signed":
 		opts.Mode = cdclient.UDPSign
 		opts.Username = MetricUsername
-	case "encrypt":
+	case "encrypted":
 		opts.Mode = cdclient.UDPEncrypt
 		opts.Username = MetricUsername
 	default:
-		log.Printf("invalid -metrics-mode %q", MetricMode)
+		LogFn("invalid metrics mode %q, metrics disabled", MetricMode)
 		return
 	}
 
-	if MetricMode != "plain-text" {
+	if MetricMode != "unencrypted" {
 		authFile, err := cdclient.NewAuthFile(MetricAuthFile)
 		if err != nil {
-			log.Printf("unable to load %q: %s", MetricAuthFile, err)
+			LogFn("unable to load %q: %s", MetricAuthFile, err)
 			return
 		}
 		password, ok := authFile.Password(MetricUsername)
 		if !ok {
-			log.Printf("no password for -metrics-user %q", MetricUsername)
+			LogFn("no password for -metrics-user %q", MetricUsername)
 			return
 		}
 		opts.Password = password
@@ -80,7 +81,7 @@ func metricsForever() {
 	for {
 		client, err := cdclient.DialUDP(MetricAddress, opts)
 		if err != nil {
-			log.Printf("unable to create metrics client: %s", err)
+			LogFn("unable to create metrics client: %s", err)
 			time.Sleep(MetricPublishInterval)
 			continue
 		}
@@ -90,14 +91,14 @@ func metricsForever() {
 			for _, f := range collectors {
 				err := f(client)
 				if err != nil {
-					log.Printf("metric collector failed: %s", err)
+					LogFn("metric collector failed: %s", err)
 				}
 			}
 			mlock.Unlock()
 
 			err = client.Flush()
 			if err != nil {
-				log.Printf("metrics client flush failed: %s", err)
+				LogFn("metrics client flush failed: %s", err)
 				break
 			}
 			time.Sleep(MetricPublishInterval)
