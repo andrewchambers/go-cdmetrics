@@ -1,4 +1,4 @@
-package cdmetrics
+package rtmetrics
 
 import (
 	"runtime"

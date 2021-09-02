@@ -13,7 +13,7 @@ import (
 var counter = cdmetrics.NewCounter("my-counter")
 
 func main() {
-	cdmetrics.PluginInstance = "example"
+	cdmetrics.MetricPluginInstance = "example"
 
 	flag.Parse()
 
