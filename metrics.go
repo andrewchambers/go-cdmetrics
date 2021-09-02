@@ -100,7 +100,6 @@ func udpMetricsForever() {
 		}
 
 		for {
-
 			err = CollectInto(client)
 			if err != nil {
 				LogFn("metrics collection failed: %s", err)
