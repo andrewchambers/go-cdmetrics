@@ -15,18 +15,18 @@ var (
 	LogFn                = log.Printf
 	MetricInterval       = 10 * time.Second
 	MetricHost           string
-	MetricPlugin         string = "go"
+	MetricPlugin         string = "gocdmetrics"
 	MetricPluginInstance string
 
-	MetricAddress  string = "localhost:25826"
-	MetricUsername string = "metrics"
-	MetricMode     string = "disabled"
-	MetricAuthFile string = "/etc/collectd.authfile"
+	UDPAddress  string = "localhost:25826"
+	UDPMode     string = "disabled"
+	UDPUsername string = "metrics"
+	UDPAuthFile string = "/etc/collectd.authfile"
 )
 
 var (
 	mlock      sync.Mutex
-	collectors []func(*cdclient.UDPClient) error
+	collectors []func(cdclient.MetricSink) error
 )
 
 func init() {
@@ -38,48 +38,61 @@ func init() {
 	MetricPluginInstance = path.Base(os.Args[0])
 }
 
-func Start() {
-	go metricsForever()
+func StartUDP() {
+	if UDPMode == "disabled" {
+		return
+	}
+	go udpMetricsForever()
 }
 
-func metricsForever() {
+func CollectInto(sink cdclient.MetricSink) error {
+	mlock.Lock()
+	defer mlock.Unlock()
+	for _, f := range collectors {
+		err := f(sink)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func udpMetricsForever() {
 
 	opts := cdclient.UDPClientOptions{
 		BufferSize: cdclient.DefaultBufferSize,
 	}
 
-	switch MetricMode {
-	case "disabled":
-		return
+	switch UDPMode {
 	case "unencrypted":
 		opts.Mode = cdclient.UDPPlainText
 	case "signed":
 		opts.Mode = cdclient.UDPSign
-		opts.Username = MetricUsername
+		opts.Username = UDPUsername
 	case "encrypted":
 		opts.Mode = cdclient.UDPEncrypt
-		opts.Username = MetricUsername
+		opts.Username = UDPUsername
 	default:
-		LogFn("invalid metrics mode %q, metrics disabled", MetricMode)
+		LogFn("invalid metrics mode %q, metrics disabled", UDPMode)
 		return
 	}
 
-	if MetricMode != "unencrypted" {
-		authFile, err := cdclient.NewAuthFile(MetricAuthFile)
+	if UDPMode != "unencrypted" {
+		authFile, err := cdclient.NewAuthFile(UDPAuthFile)
 		if err != nil {
-			LogFn("unable to load %q: %s", MetricAuthFile, err)
+			LogFn("unable to load %q: %s", UDPAuthFile, err)
 			return
 		}
-		password, ok := authFile.Password(MetricUsername)
+		password, ok := authFile.Password(UDPUsername)
 		if !ok {
-			LogFn("no password for -metrics-user %q", MetricUsername)
+			LogFn("no password for -metrics-user %q", UDPUsername)
 			return
 		}
 		opts.Password = password
 	}
 
 	for {
-		client, err := cdclient.DialUDP(MetricAddress, opts)
+		client, err := cdclient.DialUDP(UDPAddress, opts)
 		if err != nil {
 			LogFn("unable to create metrics client: %s", err)
 			time.Sleep(MetricInterval)
@@ -87,14 +100,12 @@ func metricsForever() {
 		}
 
 		for {
-			mlock.Lock()
-			for _, f := range collectors {
-				err := f(client)
-				if err != nil {
-					LogFn("metric collector failed: %s", err)
-				}
+
+			err = CollectInto(client)
+			if err != nil {
+				LogFn("metrics collection failed: %s", err)
+				break
 			}
-			mlock.Unlock()
 
 			err = client.Flush()
 			if err != nil {
@@ -116,7 +127,7 @@ func NewDefaultMetric() *cdclient.Metric {
 	}
 }
 
-func AddCollectorFunc(f func(*cdclient.UDPClient) error) {
+func AddCollectorFunc(f func(cdclient.MetricSink) error) {
 	mlock.Lock()
 	defer mlock.Unlock()
 	collectors = append(collectors, f)

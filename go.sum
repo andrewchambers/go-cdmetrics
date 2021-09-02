@@ -1,2 +1,4 @@
 github.com/andrewchambers/go-cdclient v0.0.0-20210823101709-55464b2eacac h1:j55pS+yByJ9aXqJvrYpLGfseg/N3JY6eZv463uyfbCE=
 github.com/andrewchambers/go-cdclient v0.0.0-20210823101709-55464b2eacac/go.mod h1:RvSStBWFUoyen3MHFBBEDtST9MgwOy3zg1xK44SS0Pk=
+github.com/andrewchambers/go-cdclient v0.0.0-20210902052642-1dda26cc5ad6 h1:1dJTgdAY01FKTJOLHrJC0kPlRw4ULHXLEd+RjpCSkc8=
+github.com/andrewchambers/go-cdclient v0.0.0-20210902052642-1dda26cc5ad6/go.mod h1:RvSStBWFUoyen3MHFBBEDtST9MgwOy3zg1xK44SS0Pk=

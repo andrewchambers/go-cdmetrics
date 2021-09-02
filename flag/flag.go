@@ -9,8 +9,8 @@ import (
 )
 
 func init() {
-	flag.StringVar(&cdmetrics.MetricMode, "metrics-mode", cdmetrics.MetricMode, "Metrics mode, one of \"disabled\",\"unencrypted\", \"signed\", \"encrypted\".")
-	flag.StringVar(&cdmetrics.MetricAddress, "metrics-address", cdmetrics.MetricAddress, "Address of collectd network address to send metrics to.")
-	flag.StringVar(&cdmetrics.MetricUsername, "metrics-username", cdmetrics.MetricUsername, "Username for use sign and encrypt modes.")
-	flag.StringVar(&cdmetrics.MetricAuthFile, "metrics-authfile", cdmetrics.MetricAuthFile, "Path to collectd auth file.")
+	flag.StringVar(&cdmetrics.UDPMode, "udp-metrics-mode", cdmetrics.UDPMode, "Metrics mode, one of \"disabled\",\"unencrypted\", \"signed\", \"encrypted\".")
+	flag.StringVar(&cdmetrics.UDPAddress, "udp-metrics-address", cdmetrics.UDPAddress, "Address of collectd network address to send metrics to.")
+	flag.StringVar(&cdmetrics.UDPUsername, "udp-metrics-username", cdmetrics.UDPUsername, "Username for use sign and encrypt modes.")
+	flag.StringVar(&cdmetrics.UDPAuthFile, "udp-metrics-authfile", cdmetrics.UDPAuthFile, "Path to collectd auth file.")
 }
