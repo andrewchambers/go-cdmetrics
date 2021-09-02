@@ -38,7 +38,7 @@ func init() {
 	MetricPluginInstance = path.Base(os.Args[0])
 }
 
-func StartUDP() {
+func Start() {
 	if UDPMode == "disabled" {
 		return
 	}
