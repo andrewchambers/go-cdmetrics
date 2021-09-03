@@ -10,14 +10,15 @@ import (
 	_ "github.com/andrewchambers/go-cdmetrics/flag"
 )
 
-var counter = cdmetrics.NewCounter("my-counter")
 
 func main() {
-	cdmetrics.MetricPluginInstance = "example"
 
 	flag.Parse()
 
+	cdmetrics.MetricPluginInstance = "example"
+	counter := cdmetrics.NewCounter("my-counter")
 	rtmetrics.RegisterGoRuntimeMetrics()
+
 	cdmetrics.Start()
 
 	for {
