@@ -44,12 +44,30 @@ type Gauge struct {
 	v      uint64
 }
 
-func (g *Gauge) Set(i float64) {
-	atomic.StoreUint64(&g.v, math.Float64bits(i))
-}
-
 func (g *Gauge) Load() float64 {
 	return math.Float64frombits(atomic.LoadUint64(&g.v))
+}
+
+func (g *Gauge) Set(v float64) {
+	atomic.StoreUint64(&g.v, math.Float64bits(v))
+}
+
+func (g *Gauge) Add(v float64) {
+	for {
+		old := atomic.LoadUint64(&g.v)
+		new := math.Float64bits(math.Float64frombits(old) + 1)
+		if atomic.CompareAndSwapUint64(&g.v, old, new) {
+			break
+		}
+	}
+}
+
+func (g *Gauge) Inc() {
+	g.Add(1.0)
+}
+
+func (g *Gauge) Dec() {
+	g.Add(-1.0)
 }
 
 func NewGauge(name string) *Gauge {
