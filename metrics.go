@@ -53,6 +53,10 @@ func Start() {
 		m.Host = MetricsHost
 		m.Plugin = MetricsPlugin
 		m.PluginInstance = MetricsPluginInstance
+		err := m.Validate()
+		if err != nil {
+			panic("error validating metric: " + err.Error())
+		}
 	}
 
 	if strings.HasSuffix(MetricsMode, "-udp") {
