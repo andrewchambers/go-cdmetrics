@@ -4,7 +4,7 @@ package cdmetrics
 import (
 	"log"
 	"os"
-	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -12,20 +12,21 @@ import (
 )
 
 var (
-	LogFn                = log.Printf
-	MetricInterval       = 10 * time.Second
-	MetricHost           string
-	MetricPlugin         string = "gocdmetrics"
-	MetricPluginInstance string
+	LogFn                 = log.Printf
+	MetricsInterval       = 10 * time.Second
+	MetricsHost           string
+	MetricsPlugin         string = "gocdmetrics"
+	MetricsPluginInstance string
+	MetricsMode           string = "disabled"
 
 	UDPAddress  string = "localhost:25826"
-	UDPMode     string = "disabled"
 	UDPUsername string = "metrics"
 	UDPAuthFile string = "/etc/collectd.authfile"
 )
 
 var (
 	mlock      sync.Mutex
+	metrics    []*cdclient.Metric
 	collectors []func(cdclient.MetricSink) error
 )
 
@@ -34,15 +35,31 @@ func init() {
 	if host == "" {
 		host = "_unknown_"
 	}
-	MetricHost = host
-	MetricPluginInstance = path.Base(os.Args[0])
+	MetricsHost = host
 }
 
 func Start() {
-	if UDPMode == "disabled" {
+
+	if MetricsMode == "disabled" {
 		return
 	}
-	go udpMetricsForever()
+
+	// We must configure metrics that were created after
+	// Global values were configured.
+	mlock.Lock()
+	defer mlock.Unlock()
+	for _, m := range metrics {
+		m.Interval = MetricsInterval
+		m.Host = MetricsHost
+		m.Plugin = MetricsPlugin
+		m.PluginInstance = MetricsPluginInstance
+	}
+
+	if strings.HasSuffix(MetricsMode, "-udp") {
+		go udpMetricsForever()
+	} else {
+		LogFn("invalid metrics mode %q, metrics disabled", MetricsMode)
+	}
 }
 
 func CollectInto(sink cdclient.MetricSink) error {
@@ -63,21 +80,21 @@ func udpMetricsForever() {
 		BufferSize: cdclient.DefaultBufferSize,
 	}
 
-	switch UDPMode {
-	case "unencrypted":
+	switch MetricsMode {
+	case "unencrypted-udp":
 		opts.Mode = cdclient.UDPPlainText
-	case "signed":
+	case "signed-udp":
 		opts.Mode = cdclient.UDPSign
 		opts.Username = UDPUsername
-	case "encrypted":
+	case "encrypted-udp":
 		opts.Mode = cdclient.UDPEncrypt
 		opts.Username = UDPUsername
 	default:
-		LogFn("invalid metrics mode %q, metrics disabled", UDPMode)
+		LogFn("invalid udp metrics mode %q, metrics disabled", MetricsMode)
 		return
 	}
 
-	if UDPMode != "unencrypted" {
+	if MetricsMode != "unencrypted-udp" {
 		authFile, err := cdclient.NewAuthFile(UDPAuthFile)
 		if err != nil {
 			LogFn("unable to load %q: %s", UDPAuthFile, err)
@@ -95,7 +112,7 @@ func udpMetricsForever() {
 		client, err := cdclient.DialUDP(UDPAddress, opts)
 		if err != nil {
 			LogFn("unable to create metrics client: %s", err)
-			time.Sleep(MetricInterval)
+			time.Sleep(MetricsInterval)
 			continue
 		}
 
@@ -111,19 +128,53 @@ func udpMetricsForever() {
 				LogFn("metrics client flush failed: %s", err)
 				break
 			}
-			time.Sleep(MetricInterval)
+			time.Sleep(MetricsInterval)
 		}
 	}
 
 }
 
-func NewDefaultMetric() *cdclient.Metric {
-	return &cdclient.Metric{
-		Host:           MetricHost,
-		Plugin:         MetricPlugin,
-		PluginInstance: MetricPluginInstance,
-		Interval:       MetricInterval,
+func NewMetric() *cdclient.Metric {
+	m := &cdclient.Metric{
+		Host:           MetricsHost,
+		Plugin:         MetricsPlugin,
+		PluginInstance: MetricsPluginInstance,
+		Interval:       MetricsInterval,
 	}
+	metrics = append(metrics, m)
+	return m
+}
+
+var guageDSTypes []cdclient.DSType = []cdclient.DSType{cdclient.GAUGE}
+
+func NewGaugeMetric(instance string) *cdclient.Metric {
+	m := &cdclient.Metric{
+		Host:           MetricsHost,
+		Plugin:         MetricsPlugin,
+		PluginInstance: MetricsPluginInstance,
+		Interval:       MetricsInterval,
+		Type:           "gauge",
+		TypeInstance:   instance,
+		DSTypes:        guageDSTypes,
+	}
+	metrics = append(metrics, m)
+	return m
+}
+
+var counterDSTypes []cdclient.DSType = []cdclient.DSType{cdclient.COUNTER}
+
+func NewCounterMetric(instance string) *cdclient.Metric {
+	m := &cdclient.Metric{
+		Host:           MetricsHost,
+		Plugin:         MetricsPlugin,
+		PluginInstance: MetricsPluginInstance,
+		Interval:       MetricsInterval,
+		Type:           "counter",
+		TypeInstance:   instance,
+		DSTypes:        counterDSTypes,
+	}
+	metrics = append(metrics, m)
+	return m
 }
 
 func AddCollectorFunc(f func(cdclient.MetricSink) error) {

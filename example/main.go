@@ -5,20 +5,20 @@ import (
 	"time"
 
 	"github.com/andrewchambers/go-cdmetrics"
-	"github.com/andrewchambers/go-cdmetrics/rtmetrics"
 
 	_ "github.com/andrewchambers/go-cdmetrics/flag"
+	_ "github.com/andrewchambers/go-cdmetrics/rtmetrics"
 )
 
+var (
+	counter = cdmetrics.NewCounter("my-counter")
+)
 
 func main() {
 
 	flag.Parse()
 
-	cdmetrics.MetricPluginInstance = "example"
-	counter := cdmetrics.NewCounter("my-counter")
-	rtmetrics.RegisterGoRuntimeMetrics()
-
+	cdmetrics.MetricsPluginInstance = "example"
 	cdmetrics.Start()
 
 	for {

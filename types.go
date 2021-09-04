@@ -28,11 +28,11 @@ func (ctr *Counter) Load() int64 {
 }
 
 func NewCounter(name string) *Counter {
-	m := NewDefaultMetric()
-	m.Type = "counter"
-	m.TypeInstance = name
-	m.DSTypes = []cdclient.DSType{cdclient.COUNTER}
-	c := &Counter{Metric: m}
+	m := NewCounterMetric(name)
+	c := &Counter{
+		Metric: m,
+		v:      0,
+	}
 	AddCollectorFunc(func(sink cdclient.MetricSink) error {
 		return sink.AddValues(c.Metric, time.Now(), float64(c.Load()))
 	})
@@ -71,12 +71,11 @@ func (g *Gauge) Dec() {
 }
 
 func NewGauge(name string) *Gauge {
-	m := NewDefaultMetric()
-	m.Type = "gauge"
-	m.TypeInstance = name
-	m.DSTypes = []cdclient.DSType{cdclient.GAUGE}
-	g := &Gauge{Metric: m}
-	g.Set(0.0)
+	m := NewGaugeMetric(name)
+	g := &Gauge{
+		Metric: m,
+		v:      math.Float64bits(0.0),
+	}
 	AddCollectorFunc(func(sink cdclient.MetricSink) error {
 		return sink.AddValues(g.Metric, time.Now(), g.Load())
 	})
