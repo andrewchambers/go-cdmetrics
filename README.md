@@ -43,16 +43,16 @@ $ cd example
 $ go build
 $ ./example --help
 Usage of ./example:
-  -metrics-address string
-        Address to send metrics to. (default "localhost:25826")
-  -metrics-authfile string
-        Path to metrics auth file. (default "/etc/collectd.authfile")
   -metrics-mode string
-        Metrics mode, one of "disabled", "signed", "encrypted". (default "disabled")
-  -metrics-username string
-        Username for metrics auth modes. (default "metrics")
+        Metrics mode, one of disabled, unencrypted-udp, signed-udp, encrypted-udp. (default "disabled")
+  -metrics-udp-address string
+        Address of collectd network address to send metrics to. (default "localhost:25826")
+  -metrics-udp-authfile string
+        Path to collectd auth file. (default "/etc/collectd.authfile")
+  -metrics-udp-username string
+        Username for use sign and encrypt modes. (default "metrics")
 
-$ ./example -metrics-mode=encrypted
+$ ./example -metrics-mode=encrypted-udp
 ```
 
 In another terminal:
