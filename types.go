@@ -1,7 +1,7 @@
 package cdmetrics
 
 import (
-	"math"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -41,25 +41,26 @@ func NewCounter(name string) *Counter {
 
 type Gauge struct {
 	Metric *cdclient.Metric
-	v      uint64
+	m      sync.Mutex
+	v      float64
 }
 
 func (g *Gauge) Load() float64 {
-	return math.Float64frombits(atomic.LoadUint64(&g.v))
+	g.m.Lock()
+	defer g.m.Unlock()
+	return g.v
 }
 
 func (g *Gauge) Set(v float64) {
-	atomic.StoreUint64(&g.v, math.Float64bits(v))
+	g.m.Lock()
+	defer g.m.Unlock()
+	g.v = v
 }
 
 func (g *Gauge) Add(v float64) {
-	for {
-		old := atomic.LoadUint64(&g.v)
-		new := math.Float64bits(math.Float64frombits(old) + 1)
-		if atomic.CompareAndSwapUint64(&g.v, old, new) {
-			break
-		}
-	}
+	g.m.Lock()
+	defer g.m.Unlock()
+	g.v += v
 }
 
 func (g *Gauge) Inc() {
@@ -74,7 +75,7 @@ func NewGauge(name string) *Gauge {
 	m := NewGaugeMetric(name)
 	g := &Gauge{
 		Metric: m,
-		v:      math.Float64bits(0.0),
+		v:      0.0,
 	}
 	AddCollectorFunc(func(sink cdclient.MetricSink) error {
 		return sink.AddValues(g.Metric, time.Now(), g.Load())
